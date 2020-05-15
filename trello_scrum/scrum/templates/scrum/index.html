@@ -1,0 +1,11 @@
+<h1> {{ board_name }} </h1>
+
+{% if total_points_dict %}
+    <ul>
+    {% for key, value in total_points_dict.items %}
+        <li><a href="/scrum/etapa/{{ key }}/"><b>Lista {{ key }}</b></a> tiene un total de {{ value }} story points</li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No cards where found in this board</p>
+{% endif %}
