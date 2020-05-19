@@ -8,17 +8,13 @@ def index(request):
     board_name = 'testing board'
     client = TrelloClient(
     api_key='7ff7c48b8ecd61cc9943424e203abc0c',
-    token='658c983f20351e7e441bac31ca229440040f3ae7a56fb44534c0c898763c85dc',
+    token='a5a4cf8de49ddba93215be50a54f795e6a6511efd1139d5df7d1c3d12a18dcbe',
     )
 
     all_boards = client.list_boards()
-    board = None
-
-    for b in all_boards:
-        if b.name == board_name:
-            board = b
-            break
     
+    board = next(b for b in all_boards if b.name == board_name)
+
     try:
         board
     except UnboundLocalError:
@@ -45,16 +41,24 @@ def index(request):
     for lst in lists:
         cards = lst.list_cards()
         for card in cards:
-            if card.name.find('[') >= 0:
-                splitted_card = card.name.split('[')
-                points_array = splitted_card[1].split(']')
-                points = points_array[0]
-                print(points)
+            custom_fields = card.custom_fields
+            if len(custom_fields) >= 0:
+                points_field = None
+                
+                points_field = next(field for field in custom_fields 
+                if field.name == 'POINTS')
+                
+                
+                
+                points = 0
                 try:
-                    int(points)
-                except TypeError:
-                    print('The points where not parsed correctly')
+                    points = int(points_field.value)
+                except UnboundLocalError:
+                    print('Theres no field called points')
                     points = -10000
+
+                print(points)
+
                 #Check the members that are assigned to a card
                 for id in card.member_id:
                     employee = client.get_member(id)
