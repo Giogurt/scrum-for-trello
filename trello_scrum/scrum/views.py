@@ -45,7 +45,6 @@ def index(request):
     for x in range(1, len(lists)):
         employees_in_lists.append(employees_points.copy())
 
-    x = 0
     for lst in lists:
         cards = lst.list_cards()
         for card in cards:
@@ -55,8 +54,6 @@ def index(request):
                 
                 points_field = next(field for field in custom_fields 
                 if field.name == 'POINTS')
-                
-                
                 
                 points = 0
                 try:
@@ -70,18 +67,21 @@ def index(request):
                 #Check the members that are assigned to a card
                 for id in card.member_id:
                     employee = client.get_member(id)
-                    this_dict = employees_in_lists[x]
+                    this_dict = employee_lists_points[lst.name]
                     if employee.full_name in this_dict:
                         this_dict[employee.full_name] += int(points)
                         #print(f'{employee.full_name} tiene {this_dict[employee.full_name]}')
-        x += 1
-                
+    
+    print (f"the NEEEEEEW CHANGED list: {employee_lists_points}")
     total_points = []
     x = 0
-    for employees in employees_in_lists:
+    for lst in employee_lists_points:
+        this_trello_list = employee_lists_points[lst]
+        print(f"This is a list of the dict {this_trello_list}")
         total_points.append(0)
-        for employee in employees:
-            total_points[x] += employees[employee]
+        for employee in this_trello_list:
+            print(f"This is an employee of the dict {employee}")
+            total_points[x] += this_trello_list[employee]
         x += 1
 
     print(f'puntos totales por lista {total_points}')
