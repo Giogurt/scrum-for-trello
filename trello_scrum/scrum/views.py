@@ -31,6 +31,14 @@ def index(request):
     lists.pop(0)
     lists.pop(-1)
 
+    #Creates a dictionary of lists that contains each a dictionary of employee : points
+    employee_lists_points = {lists[0].name: employees_points}
+
+    for x in range(1, len(lists)):
+        employee_lists_points[lists[x].name] = employees_points.copy()
+
+    print (f"the NEEEEEEW list: {employee_lists_points}")
+
     #create a list of a dictionary of employees points and copies one for each
     #list.
     employees_in_lists = [employees_points]
