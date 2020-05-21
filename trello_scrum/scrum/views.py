@@ -2,6 +2,9 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 
 from trello import TrelloClient
+from .scrum_member import ScrumMember
+
+import copy
 
 # Create your views here.
 def index(request):
@@ -20,10 +23,10 @@ def index(request):
     except UnboundLocalError:
         board = 'No board was found'
 
-    #Initializes a dictionary and start each member of the board with 0 points
-    employees_points = {}
+    #Initializes a list of Scrum members that can have points based on the board members 
+    employees_points = []
     for member in board.get_members():
-        employees_points[member.full_name] = 0
+        employees_points.append(ScrumMember(client, member.id, member.full_name))
 
     lists = board.all_lists()
     #Instead of just removing the lists you should be able to choose which lists
@@ -31,19 +34,20 @@ def index(request):
     lists.pop(0)
     lists.pop(-1)
 
-    #Creates a dictionary of lists that contains each a dictionary of employee : points
+    #Creates a dictionary of trello lists that contains each a list of scrum members
     employee_lists_points = {lists[0].name: employees_points}
 
+    #We need to create a new instance of each object in the list so we can create the dict correctly
+    #Note: utilizing deepcopy wasnt possible because we are using a child custom object
     for x in range(1, len(lists)):
-        employee_lists_points[lists[x].name] = employees_points.copy()
-
-    print (f"the NEEEEEEW list: {employee_lists_points}")
-
-    #create a list of a dictionary of employees points and copies one for each
-    #list.
-    employees_in_lists = [employees_points]
-    for x in range(1, len(lists)):
-        employees_in_lists.append(employees_points.copy())
+        list_copy = []
+        for y in range(len(employees_points)):
+            real_member = employees_points[y]
+            copy_member = ScrumMember(real_member.client, real_member.id, real_member.full_name)
+            list_copy.append(copy_member)
+            print(f'this is a copied member {list_copy[y]}')
+        employee_lists_points[lists[x].name] = list_copy
+    #print (f"the NEEEEEEW list: {employee_lists_points}")
 
     for lst in lists:
         cards = lst.list_cards()
@@ -67,21 +71,23 @@ def index(request):
                 #Check the members that are assigned to a card
                 for id in card.member_id:
                     employee = client.get_member(id)
-                    this_dict = employee_lists_points[lst.name]
-                    if employee.full_name in this_dict:
-                        this_dict[employee.full_name] += int(points)
-                        #print(f'{employee.full_name} tiene {this_dict[employee.full_name]}')
+                    scrum_employees = employee_lists_points[lst.name]
+
+                    #Add points to each member in the card based on this card's points
+                    for scrum_emp in scrum_employees:
+                        if(scrum_emp.full_name == employee.full_name):
+                            scrum_emp.add_points(points)
     
-    print (f"the NEEEEEEW CHANGED list: {employee_lists_points}")
+    #Create list of total points per trello list
     total_points = []
     x = 0
     for lst in employee_lists_points:
-        this_trello_list = employee_lists_points[lst]
-        print(f"This is a list of the dict {this_trello_list}")
+        print(f'THE LIST {lst}')
         total_points.append(0)
-        for employee in this_trello_list:
-            print(f"This is an employee of the dict {employee}")
-            total_points[x] += this_trello_list[employee]
+        employees = employee_lists_points[lst]
+        for employee in employees:
+            print(f'soy {employee.full_name} y tengo {employee.points}')
+            total_points[x] += employee.points
         x += 1
 
     print(f'puntos totales por lista {total_points}')
