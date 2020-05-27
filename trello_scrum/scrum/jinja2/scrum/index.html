@@ -1,0 +1,27 @@
+<h1> {{ board_name }} </h1>
+
+
+{% if employees %}
+    <h2>
+        <table>
+            <tr>
+                <th> [ Employees ] </th>
+                {% for name in lists_names %}
+                
+                    <th> [ {{ name }} ] </th>
+                    
+                {% endfor %}
+            </tr>
+            {% for employee in employees %}        
+                <tr>
+                    <td>{{ employee.full_name }}</td>
+                    {% for lst_name in lists_names %}
+                        <td>{{ employee.points[lst_name] }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+    </h2>
+{% else %}
+    <p>No employees where found in this board</p>
+{% endif %}
