@@ -7,10 +7,10 @@ class ScrumMember(member.Member):
     
     def __init__(self, client, member_id, full_name=''):
         super().__init__(client, member_id, full_name)
-        self.points = 0
+        self.points = {}
 
-    def set_points(self, points):
-        self.points = points
+    def set_points(self, list_name, points):
+        self.points[list_name] = points
 
-    def add_points(self, points):
-        self.points += points
+    def add_points(self, list_name, points):
+        self.points[list_name] += points

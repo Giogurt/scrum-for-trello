@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 
 from trello import TrelloClient
+
 from .scrum_member import ScrumMember
 
 import copy
@@ -23,31 +24,22 @@ def index(request):
     except UnboundLocalError:
         board = 'No board was found'
 
-    #Initializes a list of Scrum members that can have points based on the board members 
-    employees_points = []
-    for member in board.get_members():
-        employees_points.append(ScrumMember(client, member.id, member.full_name))
-
     lists = board.all_lists()
     #Instead of just removing the lists you should be able to choose which lists
     #to remove
     lists.pop(0)
     lists.pop(-1)
-
-    #Creates a dictionary of trello lists that contains each a list of scrum members
-    employee_lists_points = {lists[0].name: employees_points}
-
-    #We need to create a new instance of each object in the list so we can create the dict correctly
-    #Note: utilizing deepcopy wasnt possible because we are using a child custom object
-    for x in range(1, len(lists)):
-        list_copy = []
-        for y in range(len(employees_points)):
-            real_member = employees_points[y]
-            copy_member = ScrumMember(real_member.client, real_member.id, real_member.full_name)
-            list_copy.append(copy_member)
-            print(f'this is a copied member {list_copy[y]}')
-        employee_lists_points[lists[x].name] = list_copy
-    #print (f"the NEEEEEEW list: {employee_lists_points}")
+    
+    #Initializes a list of Scrum members that can have points based on the board members
+    scrum_employees = []
+    employees_points = []
+    for member in board.get_members():
+        scrum_employees.append(ScrumMember(client, member.id, member.full_name))
+    
+    #Initializes the points of the employees to 0 for each list
+    for emp in scrum_employees:
+        for lst in lists:
+            emp.set_points(lst.name, 0)
 
     for lst in lists:
         cards = lst.list_cards()
@@ -71,37 +63,40 @@ def index(request):
                 #Check the members that are assigned to a card
                 for id in card.member_id:
                     employee = client.get_member(id)
-                    scrum_employees = employee_lists_points[lst.name]
-
+                    print(f'THIS card has this member: {employee.full_name}')
                     #Add points to each member in the card based on this card's points
                     for scrum_emp in scrum_employees:
                         if(scrum_emp.full_name == employee.full_name):
-                            scrum_emp.add_points(points)
+                            scrum_emp.add_points(lst.name, points)
     
+    for emp in scrum_employees:
+        print(f'IM {emp.full_name} and here are my points {emp.points}')
+
     #Create list of total points per trello list
-    total_points = []
-    x = 0
-    for lst in employee_lists_points:
-        print(f'THE LIST {lst}')
-        total_points.append(0)
-        employees = employee_lists_points[lst]
-        for employee in employees:
-            print(f'soy {employee.full_name} y tengo {employee.points}')
-            total_points[x] += employee.points
-        x += 1
-
-    print(f'puntos totales por lista {total_points}')
-
-    total_points_dict = {}
+    lists_total_points = {}
     x = 0
     for lst in lists:
-        total_points_dict[lst.name] = total_points[x]
-        x+=1
+        print(f'THE LIST {lst}')
+        lists_total_points[lst.name] = 0
+        for employee in scrum_employees:
+            lists_total_points[lst.name] += employee.points[lst.name]
+        x += 1
+
+    print(f'puntos totales por lista {lists_total_points}')
+
+    emp_names = []
+    for emp in employees_points:
+        emp_names.append(emp.full_name)
+    
+    lists_names = []
+    for lst in lists:
+        lists_names.append(lst.name)
 
     context = {
         'board_name': board.name,
-        'lists': lists,
-        'total_points_dict': total_points_dict
+        'lists_names': lists_names,
+        'employees': scrum_employees,
+        'emp_names': emp_names
     }
     return render(request, 'scrum/index.html', context)
 
