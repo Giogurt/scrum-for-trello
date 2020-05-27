@@ -16,7 +16,7 @@
                 <tr>
                     <td>{{ employee.full_name }}</td>
                     {% for lst_name in lists_names %}
-                        <td>{{ employee.points.lst_name }}</td>
+                        <td>{{ employee.points[lst_name] }}</td>
                     {% endfor %}
                 </tr>
             {% endfor %}
