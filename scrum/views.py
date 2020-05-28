@@ -9,10 +9,12 @@ import copy
 
 # Create your views here.
 def index(request):
-    board_name = 'testing board'
+    
+    # We need to give users a way to change this, NO HARD CODE
+    board_name = 'Goals & Tasks'
     client = TrelloClient(
-    api_key='7ff7c48b8ecd61cc9943424e203abc0c',
-    token='a5a4cf8de49ddba93215be50a54f795e6a6511efd1139d5df7d1c3d12a18dcbe',
+    api_key='1c3f61d629a7c460858c84e3fdbc2de6',
+    token='747a42d4a4391bba1eaaf4ec9dbf9eae499d5b97bc0b427fe7d40a87cf5415ef',
     )
 
     all_boards = client.list_boards()
@@ -23,12 +25,25 @@ def index(request):
         board
     except UnboundLocalError:
         board = 'No board was found'
+        print(board)
 
-    lists = board.all_lists()
-    #Instead of just removing the lists you should be able to choose which lists
-    #to remove
-    lists.pop(0)
-    lists.pop(-1)
+
+    all_lists = board.all_lists()
+    #Instead of just removing the lists with the names here you should be able to choose which lists
+    #to remove NO HARD CODE
+    lists_to_track = [
+        "Backlog To Do's (planeado para esta semana)", 
+        "Doing (ya lo empece)", 
+        "QA", 
+        "Done"
+    ]
+    lists = []
+    # We go through all the lists and only save the ones that match the name that was given to us
+    for lst in all_lists:
+        for name in lists_to_track:
+            if (lst.name == name):
+                lists.append(lst)
+                break
     
     #Initializes a list of Scrum members that can have points based on the board members
     scrum_employees = []
@@ -48,22 +63,24 @@ def index(request):
             if len(custom_fields) >= 0:
                 points_field = None
                 
-                points_field = next(field for field in custom_fields 
-                if field.name == 'POINTS')
+                for field in custom_fields:
+                    # ESTE FIELD NAME DEBERIA DE SER ELEGIDO POR EL USUARIO NO HARD CODED
+                    if field.name == 'Puntos':
+                        points_field = field
                 
                 points = 0
                 try:
-                    points = int(points_field.value)
-                except UnboundLocalError:
+                    points = points_field.value
+
+                except AttributeError:
                     print('Theres no field called points')
-                    points = -10000
+                    continue
 
                 print(points)
 
                 #Check the members that are assigned to a card
                 for id in card.member_id:
                     employee = client.get_member(id)
-                    print(f'THIS card has this member: {employee.full_name}')
                     #Add points to each member in the card based on this card's points
                     for scrum_emp in scrum_employees:
                         if(scrum_emp.full_name == employee.full_name):
