@@ -1,1 +1,1 @@
-web: gunicorn trello_scrum.wsgi --log-file
+web: gunicorn trello_scrum.wsgi
