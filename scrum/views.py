@@ -3,87 +3,100 @@ from django.shortcuts import get_object_or_404, render
 
 from trello import TrelloClient
 
+from .scrum_member import ScrumMember
+
+import copy
+
 # Create your views here.
 def index(request):
     board_name = 'testing board'
     client = TrelloClient(
     api_key='7ff7c48b8ecd61cc9943424e203abc0c',
-    token='658c983f20351e7e441bac31ca229440040f3ae7a56fb44534c0c898763c85dc',
+    token='a5a4cf8de49ddba93215be50a54f795e6a6511efd1139d5df7d1c3d12a18dcbe',
     )
 
     all_boards = client.list_boards()
-    board = None
-
-    for b in all_boards:
-        if b.name == board_name:
-            board = b
-            break
     
+    board = next(b for b in all_boards if b.name == board_name)
+
     try:
         board
     except UnboundLocalError:
         board = 'No board was found'
-
-    #Initializes a dictionary and start each member of the board with 0 points
-    employees_points = {}
-    for member in board.get_members():
-        employees_points[member.full_name] = 0
 
     lists = board.all_lists()
     #Instead of just removing the lists you should be able to choose which lists
     #to remove
     lists.pop(0)
     lists.pop(-1)
+    
+    #Initializes a list of Scrum members that can have points based on the board members
+    scrum_employees = []
+    employees_points = []
+    for member in board.get_members():
+        scrum_employees.append(ScrumMember(client, member.id, member.full_name))
+    
+    #Initializes the points of the employees to 0 for each list
+    for emp in scrum_employees:
+        for lst in lists:
+            emp.set_points(lst.name, 0)
 
-    #create a list of a dictionary of employees points and copies one for each
-    #list.
-    employees_in_lists = [employees_points]
-    for x in range(1, len(lists)):
-        employees_in_lists.append(employees_points.copy())
-
-    x = 0
     for lst in lists:
         cards = lst.list_cards()
         for card in cards:
-            if card.name.find('[') >= 0:
-                splitted_card = card.name.split('[')
-                points_array = splitted_card[1].split(']')
-                points = points_array[0]
-                print(points)
+            custom_fields = card.custom_fields
+            if len(custom_fields) >= 0:
+                points_field = None
+                
+                points_field = next(field for field in custom_fields 
+                if field.name == 'POINTS')
+                
+                points = 0
                 try:
-                    int(points)
-                except TypeError:
-                    print('The points where not parsed correctly')
+                    points = int(points_field.value)
+                except UnboundLocalError:
+                    print('Theres no field called points')
                     points = -10000
+
+                print(points)
+
                 #Check the members that are assigned to a card
                 for id in card.member_id:
                     employee = client.get_member(id)
-                    this_dict = employees_in_lists[x]
-                    if employee.full_name in this_dict:
-                        this_dict[employee.full_name] += int(points)
-                        #print(f'{employee.full_name} tiene {this_dict[employee.full_name]}')
-        x += 1
-                
-    total_points = []
-    x = 0
-    for employees in employees_in_lists:
-        total_points.append(0)
-        for employee in employees:
-            total_points[x] += employees[employee]
-        x += 1
+                    print(f'THIS card has this member: {employee.full_name}')
+                    #Add points to each member in the card based on this card's points
+                    for scrum_emp in scrum_employees:
+                        if(scrum_emp.full_name == employee.full_name):
+                            scrum_emp.add_points(lst.name, points)
+    
+    for emp in scrum_employees:
+        print(f'IM {emp.full_name} and here are my points {emp.points}')
 
-    print(f'puntos totales por lista {total_points}')
-
-    total_points_dict = {}
+    #Create list of total points per trello list
+    lists_total_points = {}
     x = 0
     for lst in lists:
-        total_points_dict[lst.name] = total_points[x]
-        x+=1
+        print(f'THE LIST {lst}')
+        lists_total_points[lst.name] = 0
+        for employee in scrum_employees:
+            lists_total_points[lst.name] += employee.points[lst.name]
+        x += 1
+
+    print(f'puntos totales por lista {lists_total_points}')
+
+    emp_names = []
+    for emp in employees_points:
+        emp_names.append(emp.full_name)
+    
+    lists_names = []
+    for lst in lists:
+        lists_names.append(lst.name)
 
     context = {
         'board_name': board.name,
-        'lists': lists,
-        'total_points_dict': total_points_dict
+        'lists_names': lists_names,
+        'employees': scrum_employees,
+        'emp_names': emp_names
     }
     return render(request, 'scrum/index.html', context)
 
