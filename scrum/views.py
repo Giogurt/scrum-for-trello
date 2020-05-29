@@ -1,21 +1,30 @@
+# Django dependencies
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 
+# External dependencies
 from trello import TrelloClient
+from trello import exceptions
 
+# Project dependencies
 from .scrum_member import ScrumMember
 
+# Python dependencies
 import copy
+import datetime
 
 # Create your views here.
 def index(request):
     
     # We need to give users a way to change this, NO HARD CODE
-    board_name = 'Goals & Tasks'
+    board_name: str = 'Goals & Tasks'
     client = TrelloClient(
     api_key='1c3f61d629a7c460858c84e3fdbc2de6',
     token='747a42d4a4391bba1eaaf4ec9dbf9eae499d5b97bc0b427fe7d40a87cf5415ef',
     )
+    
+    # The api has a number of maximum number of request you can make, this checks for that limit
+    limit_reached: bool = False
 
     all_boards = client.list_boards()
     
@@ -47,7 +56,6 @@ def index(request):
     
     #Initializes a list of Scrum members that can have points based on the board members
     scrum_employees = []
-    employees_points = []
     for member in board.get_members():
         scrum_employees.append(ScrumMember(client, member.id, member.full_name))
     
@@ -57,7 +65,11 @@ def index(request):
             emp.set_points(lst.name, 0)
 
     for lst in lists:
-        cards = lst.list_cards()
+        try:
+            cards = lst.list_cards()
+        except exceptions.ResourceUnavailable:
+            limit_reached = True
+            break
         for card in cards:
             custom_fields = card.custom_fields
             if len(custom_fields) >= 0:
@@ -89,7 +101,7 @@ def index(request):
     for emp in scrum_employees:
         print(f'IM {emp.full_name} and here are my points {emp.points}')
 
-    #Create list of total points per trello list
+    #Create dictionary of total points per trello list
     lists_total_points = {}
     x = 0
     for lst in lists:
@@ -101,19 +113,16 @@ def index(request):
 
     print(f'puntos totales por lista {lists_total_points}')
 
-    emp_names = []
-    for emp in employees_points:
-        emp_names.append(emp.full_name)
-    
+    # A list containing just the names of each list without any more data
     lists_names = []
     for lst in lists:
         lists_names.append(lst.name)
 
     context = {
+        'limit_reached': limit_reached,
         'board_name': board.name,
         'lists_names': lists_names,
         'employees': scrum_employees,
-        'emp_names': emp_names
     }
     return render(request, 'scrum/index.html', context)
 
