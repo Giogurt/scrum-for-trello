@@ -16,4 +16,4 @@ class ScrumMember(member.Member):
         self.points[list_name] += points
 
     def total_points(self):
-        return sum(points.values())
+        return sum(self.points.values())

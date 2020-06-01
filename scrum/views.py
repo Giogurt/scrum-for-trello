@@ -91,11 +91,11 @@ def index(request):
                 print(points)
 
                 #Check the members that are assigned to a card
-                for id in card.member_id:
-                    employee = client.get_member(id)
+                for member_id in card.member_id:
+                    # employee = client.get_member(member_id)
                     #Add points to each member in the card based on this card's points
                     for scrum_emp in scrum_employees:
-                        if(scrum_emp.full_name == employee.full_name):
+                        if(scrum_emp.id == member_id):
                             scrum_emp.add_points(lst.name, points)
     
     for emp in scrum_employees:

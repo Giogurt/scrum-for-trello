@@ -1,6 +1,6 @@
 <h1> {{ board_name }} </h1>
 
-{% if !limit_reached %}
+{% if  not limit_reached %}
     {% if employees %}
         <h2>
             <table>
@@ -19,7 +19,7 @@
                         {% for lst_name in lists_names %}
                             <td>{{ '%0.2f'| format(employee.points[lst_name]|float) }}</td>
                         {% endfor %}
-                        <!-- <td>{{ employee.total_points() }}</td>  -->
+                        <td>{{ employee.total_points() }}</td>
                     </tr>
                 {% endfor %}
             </table>
