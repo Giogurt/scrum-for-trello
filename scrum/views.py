@@ -92,7 +92,6 @@ def index(request):
 
                 #Check the members that are assigned to a card
                 for member_id in card.member_id:
-                    # employee = client.get_member(member_id)
                     #Add points to each member in the card based on this card's points
                     for scrum_emp in scrum_employees:
                         if(scrum_emp.id == member_id):
@@ -118,7 +117,11 @@ def index(request):
     for lst in lists:
         lists_names.append(lst.name)
 
+    # Get the date of when this report was made
+    date = datetime.datetime.now()
+
     context = {
+        'date': date,
         'limit_reached': limit_reached,
         'board_name': board.name,
         'lists_names': lists_names,

@@ -1,4 +1,5 @@
 <h1> {{ board_name }} </h1>
+<h2> Report for: {{ date.strftime('%Y-%m-%d, %H:%M:%S') }}</h2>
 
 {% if  not limit_reached %}
     {% if employees %}
@@ -19,7 +20,7 @@
                         {% for lst_name in lists_names %}
                             <td>{{ '%0.2f'| format(employee.points[lst_name]|float) }}</td>
                         {% endfor %}
-                        <td>{{ employee.total_points() }}</td>
+                        <td>{{ '%0.2f'| format(employee.total_points()|float) }}</td>
                     </tr>
                 {% endfor %}
             </table>
