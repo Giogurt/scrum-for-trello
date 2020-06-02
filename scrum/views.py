@@ -1,6 +1,7 @@
 # Django dependencies
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
+import environ
 
 # External dependencies
 from trello import TrelloClient
@@ -15,12 +16,16 @@ import datetime
 
 # Create your views here.
 def index(request):
+
+    env = environ.Env()
+    # reading .env file
+    environ.Env.read_env()
     
     # We need to give users a way to change this, NO HARD CODE
     board_name: str = 'Goals & Tasks'
     client = TrelloClient(
-    api_key='1c3f61d629a7c460858c84e3fdbc2de6',
-    token='747a42d4a4391bba1eaaf4ec9dbf9eae499d5b97bc0b427fe7d40a87cf5415ef',
+    api_key= env('TRELLO_API_KEY'),
+    token= env('TRELLO_TOKEN'),
     )
     
     # The api has a number of maximum number of request you can make, this checks for that limit
