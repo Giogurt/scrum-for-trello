@@ -1,7 +1,7 @@
 <h1> {{ board_name }} </h1>
 <h2> Report for: {{ date.strftime('%Y-%m-%d, %H:%M:%S') }}</h2>
 
-{% if  not limit_reached %}
+{% if not limit_reached %}
     {% if employees %}
         <h2>
             <table>
