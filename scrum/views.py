@@ -1,6 +1,7 @@
 # Django dependencies
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
+import environ
 
 # External dependencies
 from trello import TrelloClient
@@ -15,31 +16,36 @@ import datetime
 
 # Create your views here.
 def index(request):
-    
-    # We need to give users a way to change this, NO HARD CODE
-    board_name: str = 'Goals & Tasks'
-    client = TrelloClient(
-    api_key='1c3f61d629a7c460858c84e3fdbc2de6',
-    token='747a42d4a4391bba1eaaf4ec9dbf9eae499d5b97bc0b427fe7d40a87cf5415ef',
-    )
-    
+
+    env = environ.Env()
+    # reading .env file
+    environ.Env.read_env()
+
+    # Name of the custom field being used in trello to track the points
+    # For now this will be read from the .env file but should be something asked to the user
+    custom_field_name: str = env('CUSTOM_FIELD_NAME', default='points').lower()
+
     # The api has a number of maximum number of request you can make, this checks for that limit
     limit_reached: bool = False
 
+    # We need to give users a way to change this, NO HARD CODE
+    board_name: str = 'Goals & Tasks'
+    client = TrelloClient(
+    api_key= env('TRELLO_API_KEY'),
+    token= env('TRELLO_TOKEN'),
+    )
+
     all_boards = client.list_boards()
     
-    board = next(b for b in all_boards if b.name == board_name)
-
     try:
-        board
+        board = next(b for b in all_boards if b.name == board_name)
     except UnboundLocalError:
         board = 'No board was found'
         print(board)
 
-
     all_lists = board.all_lists()
-    #Instead of just removing the lists with the names here you should be able to choose which lists
-    #to remove NO HARD CODE
+    # Instead of just removing the lists with the names here you should be able to choose which lists
+    # to remove NO HARD CODE
     lists_to_track = [
         "Backlog To Do's (planeado para esta semana)", 
         "Doing (ya lo empece)", 
@@ -77,7 +83,7 @@ def index(request):
                 
                 for field in custom_fields:
                     # ESTE FIELD NAME DEBERIA DE SER ELEGIDO POR EL USUARIO NO HARD CODED
-                    if field.name == 'Puntos':
+                    if field.name.lower() == custom_field_name:
                         points_field = field
                 
                 points = 0
@@ -85,7 +91,7 @@ def index(request):
                     points = points_field.value
 
                 except AttributeError:
-                    print('Theres no field called points')
+                    print(f'Theres no field name with the name {custom_field_name}')
                     continue
 
                 print(points)

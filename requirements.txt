@@ -3,3 +3,4 @@ Jinja2>=2.11.2
 py-trello>=0.16.0
 gunicorn
 django-heroku
+django-environ
