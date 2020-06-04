@@ -1,20 +1,27 @@
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+</head>
+
 <h1> {{ board_name }} </h1>
 <h2> Report for: {{ date.strftime('%Y-%m-%d, %H:%M:%S') }}</h2>
 
 {% if not limit_reached %}
     {% if employees %}
         <h2>
-            <table>
-                <tr>
-                    <th> [ Employees ] </th>
-                    {% for name in lists_names %}
-                    
-                        <th> [ {{ name }} ] </th>
+            <table class="table table-bordered">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Employees</th>
+                        {% for name in lists_names %}
                         
-                    {% endfor %}
-                    <th> [ Total Points ]</th>
-                </tr>
-                {% for employee in employees %}        
+                            <th>{{ name }}</th>
+                            
+                        {% endfor %}
+                        <th>Total Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}        
                     <tr>
                         <td>{{ employee.full_name }}</td>
                         {% for lst_name in lists_names %}
@@ -23,6 +30,7 @@
                         <td>{{ '%0.2f'| format(employee.total_points()|float) }}</td>
                     </tr>
                 {% endfor %}
+                </tbody>
             </table>
         </h2>
     {% else %}
